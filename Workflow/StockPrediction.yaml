@@ -20,7 +20,7 @@ workflowBody:
     - name: "resource"
       value: "python:arn:aws:lambda:us-east-1:913657042671:function:calculateInputLength"
 - parallelFor:
-    name: "ParallelFor"
+    name: "PFRetrieveStockPrices"
     dataIns:
     - name: "symbols"
       type: "collection"
@@ -39,7 +39,7 @@ workflowBody:
         dataIns:
         - name: "symbol"
           type: "string"
-          source: "ParallelFor/symbols"
+          source: "PFRetrieveStockPrices/symbols"
         dataOuts:
         - name: "stockPrices"
           type: "collection"
@@ -54,19 +54,58 @@ workflowBody:
       - name: "aggregation"
         value: "+"
 - function:
-    name: "WriteToS3"
+    name: "WriteToS3StockPrices"
     type: "string"
     dataIns:
     - name: "stockPrices"
       type: "collection"
-      source: "ParallelFor/stockPrices"
-    dataOuts:
-    - name: "exitCode"
-      type: "string"
+      source: "PFRetrieveStockPrices/stockPrices"
     properties:
     - name: "resource"
       value: "python:arn:aws:lambda:us-east-1:913657042671:function:writeToS3"
+- function:
+    name: "createForecast0"
+    type: "string"
+- parallelFor:
+    name: "PFLookup"
+    dataIns:
+    - name: "symbols"
+      type: "collection"
+      source: "calculateInputLength/symbols"
+      constraints:
+      - name: "distribution"
+        value: "BLOCK(1)"
+    loopCounter:
+      type: "number"
+      from: "1"
+      to: "calculateInputLength/length"
+      step: "1"
+    loopBody:
+    - function:
+        name: "forecastLookup"
+        type: "string"
+        dataIns:
+        - name: "symbol"
+          type: "string"
+          source: "PFLookup/symbols"
+        dataOuts:
+        - name: "lookup"
+          type: "collection"
+    - function:
+        name: "visualizeLookup"
+        type: "string"
+        dataIns:
+        - name: "lookup"
+          type: "collection"
+          source: "forecastLookup/lookup"
+        dataOuts:
+        - name: "pictureURL"
+          type: "string"
+    dataOuts:
+    - name: "pictures"
+      type: "collection"
+      source: "visualizeLookup/pictureURL"
 dataOuts:
-- name: "exitCode"
-  type: "string"
-  source: "WriteToS3/exitCode"
+- name: "pictures"
+  type: "collection"
+  source: "PFLookup/pictures"
