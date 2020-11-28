@@ -1,0 +1,1 @@
+java -jar xAFCL.jar StockPrediction.yaml input.json

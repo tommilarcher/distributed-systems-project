@@ -1,0 +1,72 @@
+---
+name: "StockPrediction"
+dataIns:
+- name: "symbols"
+  type: "collection"
+  source: "symbols"
+workflowBody:
+- function:
+    name: "calculateInputLength"
+    dataIns:
+    - name: "symbols"
+      type: "collection"
+      source: "StockPrediction/symbols"
+    dataOuts:
+    - name: "symbols"
+      type: "collection"
+    - name: "length"
+      type: "number"
+    properties:
+    - name: "resource"
+      value: "python:arn:aws:lambda:us-east-1:913657042671:function:calculateInputLength"
+- parallelFor:
+    name: "ParallelFor"
+    dataIns:
+    - name: "symbols"
+      type: "collection"
+      source: "calculateInputLength/symbols"
+      constraints:
+      - name: "distribution"
+        value: "BLOCK(1)"
+    loopCounter:
+      type: "number"
+      from: "0"
+      to: "calculateInputLength/length"
+      step: "1"
+    loopBody:
+    - function:
+        name: "retrieveStockPrices"
+        dataIns:
+        - name: "symbol"
+          type: "string"
+          source: "ParallelFor/symbols"
+        dataOuts:
+        - name: "stockPrices"
+          type: "collection"
+        properties:
+        - name: "resource"
+          value: "python:arn:aws:lambda:us-east-1:913657042671:function:retrieveStockPrices"
+    dataOuts:
+    - name: "stockPrices"
+      type: "collection"
+      source: "retrieveStockPrices/stockPrices"
+      constraints:
+      - name: "aggregation"
+        value: "+"
+- function:
+    name: "WriteToS3"
+    type: "string"
+    dataIns:
+    - name: "stockPrices"
+      type: "collection"
+      source: "ParallelFor/stockPrices"
+    dataOuts:
+    - name: "exitCode"
+      type: "string"
+    properties:
+    - name: "resource"
+      value: "python:arn:aws:lambda:us-east-1:913657042671:function:writeToS3"
+dataOuts:
+- name: "exitCode"
+  type: "string"
+  source: "WriteToS3/exitCode"
