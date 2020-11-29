@@ -9,7 +9,7 @@ Resources:
       CodeUri: hello_world/
       Handler: app.lambda_handler
       Runtime: python3.8
-      Role: arn:aws:iam::913657042671:role/service-role/basicLambdaRole
+      Role: arn:aws:iam::582784785991:role/basicLambdaRole
       Timeout: 3
       MemorySize: 128
-      FunctionName: retrieveStockPrices
+      FunctionName: RetrieveStockPrices

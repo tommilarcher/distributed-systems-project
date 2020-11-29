@@ -4,4 +4,4 @@
 [build_definitions.1c02a8fc-08e0-472c-babb-f4215185b4fb]
 codeuri = "hello_world/"
 runtime = "python3.8"
-functions = ["retrieveStockPrices"]
+functions = ["RetrieveStockPrices"]

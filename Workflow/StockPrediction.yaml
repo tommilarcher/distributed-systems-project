@@ -4,34 +4,33 @@ dataIns:
 - name: "symbols"
   type: "collection"
   source: "symbols"
+  passing: true
+- name: "bucket_name"
+  type: "string"
+  source: "bucket_name"
+  passing: true
+- name: "file_name"
+  type: "string"
+  source: "file_name"
+  passing: true
+- name: "input_length"
+  type: "string"
+  source: "input_length"
+  passing: true
 workflowBody:
-- function:
-    name: "calculateInputLength"
-    dataIns:
-    - name: "symbols"
-      type: "collection"
-      source: "StockPrediction/symbols"
-    dataOuts:
-    - name: "symbols"
-      type: "collection"
-    - name: "length"
-      type: "number"
-    properties:
-    - name: "resource"
-      value: "python:arn:aws:lambda:us-east-1:913657042671:function:calculateInputLength"
 - parallelFor:
     name: "PFRetrieveStockPrices"
     dataIns:
     - name: "symbols"
       type: "collection"
-      source: "calculateInputLength/symbols"
+      source: "StockPrediction/symbols"
       constraints:
       - name: "distribution"
         value: "BLOCK(1)"
     loopCounter:
       type: "number"
       from: "0"
-      to: "calculateInputLength/length"
+      to: "StockPrediction/input_length"
       step: "1"
     loopBody:
     - function:
@@ -45,7 +44,7 @@ workflowBody:
           type: "collection"
         properties:
         - name: "resource"
-          value: "python:arn:aws:lambda:us-east-1:913657042671:function:retrieveStockPrices"
+          value: "python:arn:aws:lambda:us-east-1:582784785991:function:RetrieveStockPrices"
     dataOuts:
     - name: "stockPrices"
       type: "collection"
@@ -54,58 +53,89 @@ workflowBody:
       - name: "aggregation"
         value: "+"
 - function:
-    name: "WriteToS3StockPrices"
-    type: "string"
+    name: "WriteToS3"
     dataIns:
-    - name: "stockPrices"
+    - name: "input"
       type: "collection"
       source: "PFRetrieveStockPrices/stockPrices"
+    - name: "bucket_name"
+      type: "string"
+      source: "StockPrediction/bucket_name"
+    - name: "file_name"
+      type: "string"
+      source: "StockPrediction/file_name"
     properties:
     - name: "resource"
-      value: "python:arn:aws:lambda:us-east-1:913657042671:function:writeToS3"
+      value: "python:arn:aws:lambda:us-east-1:582784785991:function:WriteToS3"
 - function:
-    name: "createForecast0"
-    type: "string"
+    name: "createDataset"
+    dataIns:
+    - name: "bucket_name"
+      type: "string"
+      source: "StockPrediction/bucket_name"
+    - name: "file_name"
+      type: "string"
+      source: "StockPrediction/file_name"
+    dataOuts:
+    - name: "dataset_group_arn"
+      type: "string"
+    properties:
+    - name: "resource"
+      value: "python:arn:aws:lambda:us-east-1:582784785991:function:CreateDataset"
+- function:
+    name: "createPredictor"
+    type: "aType"
+    dataIns:
+    - name: "dataset_group_arn"
+      type: "string"
+      source: "createDataset/dataset_group_arn"
+    dataOuts:
+    - name: "predictor_arn"
+      type: "string"
+    properties:
+    - name: "resource"
+      value: "python:arn:aws:lambda:us-east-1:582784785991:function:CreatePredictor"
+- function:
+    name: "createForecast"
+    type: "aType"
+    dataIns:
+    - name: "predictor_arn"
+      type: "string"
+      source: "createPredictor/predictor_arn"
+    dataOuts:
+    - name: "forecast_arn"
+      type: "string"
+    properties:
+    - name: "resource"
+      value: "python:arn:aws:lambda:us-east-1:582784785991:function:CreateForecast"
 - parallelFor:
-    name: "PFLookup"
+    name: "PFVisualize"
     dataIns:
     - name: "symbols"
       type: "collection"
-      source: "calculateInputLength/symbols"
+      source: "StockPrediction/symbols"
       constraints:
       - name: "distribution"
         value: "BLOCK(1)"
     loopCounter:
       type: "number"
       from: "1"
-      to: "calculateInputLength/length"
+      to: "StockPrediction/input_length"
       step: "1"
     loopBody:
     - function:
-        name: "forecastLookup"
-        type: "string"
+        name: "visualizeForecast"
+        type: "aType"
         dataIns:
         - name: "symbol"
           type: "string"
-          source: "PFLookup/symbols"
-        dataOuts:
-        - name: "lookup"
-          type: "collection"
-    - function:
-        name: "visualizeLookup"
-        type: "string"
-        dataIns:
-        - name: "lookup"
-          type: "collection"
-          source: "forecastLookup/lookup"
-        dataOuts:
-        - name: "pictureURL"
+          source: "PFVisualize/symbols"
+        - name: "forecast_arn"
           type: "string"
-    dataOuts:
-    - name: "pictures"
-      type: "collection"
-      source: "visualizeLookup/pictureURL"
-dataOuts:
-- name: "pictures"
-  type: "collection"
-  source: "PFLookup/pictures"
+          source: "createForecast/forecast_arn"
+        - name: "bucket_name"
+          type: "string"
+          source: "StockPrediction/bucket_name"
+        properties:
+        - name: "resource"
+          value: "python:arn:aws:lambda:us-east-1:582784785991:function:VisualizeForecast"

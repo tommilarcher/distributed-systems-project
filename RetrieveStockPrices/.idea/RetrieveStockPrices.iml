@@ -15,14 +15,14 @@
           <value>
             <DeploySamConfig>
               <option name="autoExecute" value="true" />
-              <option name="bucketName" value="tommilarcher-lambda-source" />
+              <option name="bucketName" value="tommilarcher-lambda-source-bucket" />
               <option name="enabledCapabilities">
                 <list>
                   <option value="IAM" />
                   <option value="NAMED_IAM" />
                 </list>
               </option>
-              <option name="stackName" value="retrieveStockPrices" />
+              <option name="stackName" value="RetrieveStockPrices" />
             </DeploySamConfig>
           </value>
         </entry>

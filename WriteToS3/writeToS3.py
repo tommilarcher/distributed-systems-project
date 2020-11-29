@@ -2,7 +2,9 @@ import json
 import boto3
 
 def lambda_handler(event, context):
-    stockPrices = event["stockPrices"]
+    stockPrices = event["input"]
+    bucket_name = event["bucket_name"]
+    file_name = event["file_name"]
     
     # create csv
     result = ""
@@ -14,9 +16,8 @@ def lambda_handler(event, context):
 
     # write to s3
     s3 = boto3.client('s3')
-    s3.put_object(Body=result, Bucket="tommilarcher-stockprices", Key='stocks-prices.csv')
-    # TODO implement
+    s3.put_object(Body=result, Bucket=bucket_name, Key=file_name)
     return {
-        "exitCode": "Successful!"
+        
     }
 
