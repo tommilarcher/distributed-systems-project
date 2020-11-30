@@ -4,19 +4,9 @@ dataIns:
 - name: "symbols"
   type: "collection"
   source: "symbols"
-  passing: true
-- name: "bucket_name"
+- name: "inputlength"
   type: "string"
-  source: "bucket_name"
-  passing: true
-- name: "file_name"
-  type: "string"
-  source: "file_name"
-  passing: true
-- name: "input_length"
-  type: "string"
-  source: "input_length"
-  passing: true
+  source: "inputlength"
 workflowBody:
 - parallelFor:
     name: "PFRetrieveStockPrices"
@@ -30,7 +20,7 @@ workflowBody:
     loopCounter:
       type: "number"
       from: "0"
-      to: "StockPrediction/input_length"
+      to: "StockPrediction/inputlength"
       step: "1"
     loopBody:
     - function:
@@ -49,33 +39,17 @@ workflowBody:
     - name: "stockPrices"
       type: "collection"
       source: "retrieveStockPrices/stockPrices"
-      constraints:
-      - name: "aggregation"
-        value: "+"
 - function:
     name: "WriteToS3"
     dataIns:
     - name: "input"
       type: "collection"
       source: "PFRetrieveStockPrices/stockPrices"
-    - name: "bucket_name"
-      type: "string"
-      source: "StockPrediction/bucket_name"
-    - name: "file_name"
-      type: "string"
-      source: "StockPrediction/file_name"
     properties:
     - name: "resource"
       value: "python:arn:aws:lambda:us-east-1:582784785991:function:WriteToS3"
 - function:
     name: "createDataset"
-    dataIns:
-    - name: "bucket_name"
-      type: "string"
-      source: "StockPrediction/bucket_name"
-    - name: "file_name"
-      type: "string"
-      source: "StockPrediction/file_name"
     dataOuts:
     - name: "dataset_group_arn"
       type: "string"
@@ -120,12 +94,11 @@ workflowBody:
     loopCounter:
       type: "number"
       from: "1"
-      to: "StockPrediction/input_length"
+      to: "StockPrediction/inputlength"
       step: "1"
     loopBody:
     - function:
-        name: "visualizeForecast"
-        type: "aType"
+        name: "cueryForecast"
         dataIns:
         - name: "symbol"
           type: "string"
@@ -133,9 +106,6 @@ workflowBody:
         - name: "forecast_arn"
           type: "string"
           source: "createForecast/forecast_arn"
-        - name: "bucket_name"
-          type: "string"
-          source: "StockPrediction/bucket_name"
         properties:
         - name: "resource"
-          value: "python:arn:aws:lambda:us-east-1:582784785991:function:VisualizeForecast"
+          value: "python:arn:aws:lambda:us-east-1:582784785991:function:QueryForecast"

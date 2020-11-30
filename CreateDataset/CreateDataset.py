@@ -78,8 +78,8 @@ def get_or_create_iam_role( role_name ):
 
 def lambda_handler(event, context):
     # global settings
-    bucket_name = event["bucket_name"]
-    filename = event["file_name"]
+    bucket_name = "tommi-stockprices"
+    filename = "stock-prices.csv"
     project = "stockprices"
     region = "us-east-1"
     datasetName = project + "_ds"

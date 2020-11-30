@@ -3,8 +3,8 @@ import boto3
 
 def lambda_handler(event, context):
     stockPrices = event["input"]
-    bucket_name = event["bucket_name"]
-    file_name = event["file_name"]
+    bucket_name = "tommi-stockprices"
+    file_name = "stock-prices.csv"
     
     # create csv
     result = ""

@@ -4,7 +4,7 @@ import boto3
 def lambda_handler(event, context):
     forecast_arn = event["forecast_arn"]
     item_id = event["symbol"]
-    bucket_name = event["bucket_name"]
+    bucket_name = "tommi-stockprices"
     region = "us-east-1"
     
     session = boto3.Session(region_name=region)

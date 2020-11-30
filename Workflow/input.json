@@ -5,8 +5,6 @@
     "NCMI",
     "IBM"
   ],
-  "bucket_name": "tommi-stockprices",
-  "file_name": "stock-prices.csv",
-  "input_length": 4
+  "inputlength": 4
 }
 
