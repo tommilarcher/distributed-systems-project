@@ -1,58 +1,52 @@
 import json
 import boto3
+from io import StringIO
 import sys
-import time
-
-
-class StatusIndicator:
-
-    def __init__(self):
-        self.previous_status = None
-        self.need_newline = False
-
-    def update(self, status):
-        if self.previous_status != status:
-            if self.need_newline:
-                sys.stdout.write("\n")
-            sys.stdout.write(status + " ")
-            self.need_newline = True
-            self.previous_status = status
-        else:
-            sys.stdout.write("util")
-            self.need_newline = True
-        sys.stdout.flush()
-
-    def end(self):
-        if self.need_newline:
-            sys.stdout.write("\n")
-
+sys.path.append("/mnt/lambda")
+import pandas as pd
+from fbprophet import Prophet
 
 def lambda_handler(event, context):
-    predictor_arn = event["predictor_arn"]
-    project = "stockprices"
-    region = "us-east-1"
+    symbol = event["symbol"][1:-1]
+    bucket = event["bucket"][1:-1]
+    print("symbol: " + symbol)
+    print("bucket: " + bucket)
+    input_filename = "stock-prices-" + symbol  + '.csv'
+    output_filename = "stock-prices-" + symbol + '-prediction' + '.csv'
     
-    session = boto3.Session(region_name=region)
-    forecast = session.client(service_name="forecast")
-    
-    forecast.get_accuracy_metrics(PredictorArn=predictor_arn)
-    forecastName = project + "_forecast"
-    create_forecast_response = forecast.create_forecast(
-        ForecastName=forecastName, PredictorArn=predictor_arn
+    # read from s3
+    s3client = boto3.client('s3')
+    fileobj = s3client.get_object(
+        Bucket=bucket,
+        Key=input_filename
     )
-    forecast_arn = create_forecast_response["ForecastArn"]
+    filedata = fileobj['Body'].read()
+    contents = filedata.decode('utf-8') 
+    data = StringIO(contents) 
+    df=pd.read_csv(data)
+    df = df.rename(columns={'timestamp': 'ds', 'values': 'y'})
     
-    status_indicator = StatusIndicator()
+    # predict
+    m = Prophet(
+        yearly_seasonality=True,
+        weekly_seasonality=False,
+        daily_seasonality=False,
+        changepoint_range=1,
+        interval_width=0.95,
+    )
+    m.fit(df)
+    future = m.make_future_dataframe(periods=36)
+    forecast = m.predict(future)
+    forecast = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]
     
-    while True:
-        status = forecast.describe_forecast(ForecastArn=forecast_arn)["Status"]
-        status_indicator.update(status)
-        if status in ("ACTIVE", "CREATE_FAILED"):
-            break
-        time.sleep(10)
-    
-    status_indicator.end()
+    # write to s3
+    csv_buffer = StringIO()
+    forecast.to_csv(csv_buffer, index=False)
+    s3_resource = boto3.resource('s3')
+    s3_resource.Object(bucket, output_filename).put(Body=csv_buffer.getvalue())
     
     return {
-        "forecast_arn": forecast_arn
+        'symbol': symbol,
+        'bucket': bucket
     }
+    

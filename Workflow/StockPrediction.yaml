@@ -5,8 +5,11 @@ dataIns:
   type: "collection"
   source: "symbols"
 - name: "inputlength"
-  type: "string"
+  type: "number"
   source: "inputlength"
+- name: "bucket"
+  type: "string"
+  source: "bucket"
 workflowBody:
 - parallelFor:
     name: "PFRetrieveStockPrices"
@@ -14,6 +17,12 @@ workflowBody:
     - name: "symbols"
       type: "collection"
       source: "StockPrediction/symbols"
+      constraints:
+      - name: "distribution"
+        value: "BLOCK(1)"
+    - name: "bucket"
+      type: "string"
+      source: "StockPrediction/bucket"
       constraints:
       - name: "distribution"
         value: "BLOCK(1)"
@@ -29,83 +38,54 @@ workflowBody:
         - name: "symbol"
           type: "string"
           source: "PFRetrieveStockPrices/symbols"
+        - name: "bucket"
+          type: "string"
+          source: "PFRetrieveStockPrices/bucket"
         dataOuts:
-        - name: "stockPrices"
-          type: "collection"
+        - name: "symbol"
+          type: "string"
+        - name: "bucket"
+          type: "string"
         properties:
         - name: "resource"
           value: "python:arn:aws:lambda:us-east-1:582784785991:function:RetrieveStockPrices"
-    dataOuts:
-    - name: "stockPrices"
-      type: "collection"
-      source: "retrieveStockPrices/stockPrices"
-- function:
-    name: "WriteToS3"
-    dataIns:
-    - name: "input"
-      type: "collection"
-      source: "PFRetrieveStockPrices/stockPrices"
-    properties:
-    - name: "resource"
-      value: "python:arn:aws:lambda:us-east-1:582784785991:function:WriteToS3"
-- function:
-    name: "createDataset"
-    dataOuts:
-    - name: "dataset_group_arn"
-      type: "string"
-    properties:
-    - name: "resource"
-      value: "python:arn:aws:lambda:us-east-1:582784785991:function:CreateDataset"
-- function:
-    name: "createPredictor"
-    type: "aType"
-    dataIns:
-    - name: "dataset_group_arn"
-      type: "string"
-      source: "createDataset/dataset_group_arn"
-    dataOuts:
-    - name: "predictor_arn"
-      type: "string"
-    properties:
-    - name: "resource"
-      value: "python:arn:aws:lambda:us-east-1:582784785991:function:CreatePredictor"
-- function:
-    name: "createForecast"
-    type: "aType"
-    dataIns:
-    - name: "predictor_arn"
-      type: "string"
-      source: "createPredictor/predictor_arn"
-    dataOuts:
-    - name: "forecast_arn"
-      type: "string"
-    properties:
-    - name: "resource"
-      value: "python:arn:aws:lambda:us-east-1:582784785991:function:CreateForecast"
-- parallelFor:
-    name: "PFVisualize"
-    dataIns:
-    - name: "symbols"
-      type: "collection"
-      source: "StockPrediction/symbols"
-      constraints:
-      - name: "distribution"
-        value: "BLOCK(1)"
-    loopCounter:
-      type: "number"
-      from: "1"
-      to: "StockPrediction/inputlength"
-      step: "1"
-    loopBody:
     - function:
-        name: "cueryForecast"
+        name: "predict"
         dataIns:
         - name: "symbol"
           type: "string"
-          source: "PFVisualize/symbols"
-        - name: "forecast_arn"
+          source: "retrieveStockPrices/symbol"
+        - name: "bucket"
           type: "string"
-          source: "createForecast/forecast_arn"
+          source: "retrieveStockPrices/bucket"
+        dataOuts:
+        - name: "symbol"
+          type: "string"
+        - name: "bucket"
+          type: "string"
         properties:
         - name: "resource"
-          value: "python:arn:aws:lambda:us-east-1:582784785991:function:QueryForecast"
+          value: "python:arn:aws:lambda:us-east-1:582784785991:function:CreateForecast"
+    - function:
+        name: "visualize"
+        dataIns:
+        - name: "symbol"
+          type: "string"
+          source: "predict/symbol"
+        - name: "bucket"
+          type: "string"
+          source: "predict/bucket"
+        dataOuts:
+        - name: "result"
+          type: "string"
+        properties:
+        - name: "resource"
+          value: "python:arn:aws:lambda:us-east-1:582784785991:function:visulaizeForecast"
+    dataOuts:
+    - name: "result"
+      type: "collection"
+      source: "visualize/result"
+dataOuts:
+- name: "result"
+  type: "collection"
+  source: "PFRetrieveStockPrices/result"

@@ -1,10 +1,6 @@
 {
-  "symbols": [
-    "AAL",
-    "ALT",
-    "NCMI",
-    "IBM"
-  ],
-  "inputlength": 4
+  "symbols": ["AAL", "ALT", "NCMI", "IBM"],
+  "inputlength": 4,
+  "bucket": ["tommi-stockprices", "tommi-stockprices", "tommi-stockprices", "tommi-stockprices"]
 }
 
