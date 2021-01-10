@@ -47,25 +47,25 @@ def lambda_handler(event, context):
                 "labels": dates,
                 "datasets": [
                     {
-                        "label": "IBM model",
+                        "label": symbol + " model",
                         "data": values,
                         "fill": "false",
                         "pointRadius": 0,
                     },
                     {
-                        "label": "IBM real",
+                        "label": symbol + " real",
                         "data": values_real,
                         "fill": "false",
                         "pointRadius": 1,
                     },
                     {
-                        "label": "IBM low",
+                        "label": symbol + " low",
                         "data": values_low,
                         "fill": "false",
                         "pointRadius": 1,
                     },
                     {
-                        "label": "IBM high",
+                        "label": symbol + " high",
                         "data": values_high,
                         "fill": "false",
                         "pointRadius": 1,
@@ -91,6 +91,6 @@ def lambda_handler(event, context):
     s3_resource.Object("tommi-stockprices", "stock-prices-" + symbol + "-chart.png").put(Body=response.content)
     
     return {
-        "result": "stock-prices" + symbol + "-chart.png"
+        "result": "stock-prices-" + symbol + "-chart.png"
     }
         

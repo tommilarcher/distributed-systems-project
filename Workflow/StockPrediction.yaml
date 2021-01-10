@@ -8,7 +8,7 @@ dataIns:
   type: "number"
   source: "inputlength"
 - name: "bucket"
-  type: "string"
+  type: "collection"
   source: "bucket"
 workflowBody:
 - parallelFor:

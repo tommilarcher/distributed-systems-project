@@ -6,7 +6,6 @@ sys.path.append("/mnt/lambda")
 import requests
 import pandas as pd
 
-
 def lambda_handler(event, context):
     symbol = event["symbol"]
     bucket = event["bucket"]
