@@ -1,5 +1,4 @@
 {
-  "symbols": ["AAL", "ALT", "NCMI", "IBM"],
+  "symbols": ["AAL", "ALT", "NCMI", "IBM", "AAL"],
   "bucket": "tommi-stockprices"
 }
-
