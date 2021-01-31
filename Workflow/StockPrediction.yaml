@@ -4,32 +4,48 @@ dataIns:
 - name: "symbols"
   type: "collection"
   source: "symbols"
-- name: "inputlength"
-  type: "number"
-  source: "inputlength"
 - name: "bucket"
-  type: "collection"
+  type: "string"
   source: "bucket"
 workflowBody:
+- function:
+    name: "Helper"
+    dataIns:
+    - name: "symbols"
+      type: "collection"
+      source: "StockPrediction/symbols"
+    - name: "bucket"
+      type: "string"
+      source: "StockPrediction/bucket"
+    dataOuts:
+    - name: "symbols"
+      type: "collection"
+    - name: "buckets"
+      type: "collection"
+    - name: "inputlength"
+      type: "number"
+    properties:
+    - name: "resource"
+      value: "python:arn:aws:lambda:us-east-1:582784785991:function:Helper"
 - parallelFor:
     name: "PFRetrieveStockPrices"
     dataIns:
     - name: "symbols"
       type: "collection"
-      source: "StockPrediction/symbols"
+      source: "Helper/symbols"
       constraints:
       - name: "distribution"
         value: "BLOCK(1)"
-    - name: "bucket"
-      type: "string"
-      source: "StockPrediction/bucket"
+    - name: "buckets"
+      type: "collection"
+      source: "Helper/buckets"
       constraints:
       - name: "distribution"
         value: "BLOCK(1)"
     loopCounter:
       type: "number"
       from: "0"
-      to: "StockPrediction/inputlength"
+      to: "Helper/inputlength"
       step: "1"
     loopBody:
     - function:
@@ -40,7 +56,7 @@ workflowBody:
           source: "PFRetrieveStockPrices/symbols"
         - name: "bucket"
           type: "string"
-          source: "PFRetrieveStockPrices/bucket"
+          source: "PFRetrieveStockPrices/buckets"
         dataOuts:
         - name: "symbol"
           type: "string"
